@@ -823,8 +823,6 @@ namespace GHelper.Peripherals
             DetectAllAsusMice();
             DetectAllAsusKeyboards();
             DetectAllAsusHeadsets();
-            if (AppConfig.IsDetachableKeyboard()) Program.inputDispatcher.Init();
-            XGM.Init();
         }
     }
 }

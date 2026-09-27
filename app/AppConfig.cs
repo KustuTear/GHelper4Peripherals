@@ -1,5 +1,4 @@
 using GHelper.Helpers;
-using GHelper.Mode;
 using Microsoft.Win32;
 using System.Management;
 using System.Text.Json;
@@ -245,118 +244,6 @@ public static class AppConfig
     {
         lock (configLock) config.Remove(name);
         Write();
-    }
-
-    public static void RemoveMode(string name)
-    {
-        Remove(name + "_" + Modes.GetCurrent());
-    }
-
-    public static string GgetParamName(AsusFan device, string paramName = "fan_profile")
-    {
-        int mode = Modes.GetCurrent();
-        string name;
-
-        switch (device)
-        {
-            case AsusFan.GPU:
-                name = "gpu";
-                break;
-            case AsusFan.Mid:
-                name = "mid";
-                break;
-            case AsusFan.XGM:
-                name = "xgm";
-                break;
-            default:
-                name = "cpu";
-                break;
-        }
-
-        return paramName + "_" + name + "_" + mode;
-    }
-
-    public static byte[] GetFanConfig(AsusFan device)
-    {
-        string curveString = GetString(GgetParamName(device));
-        byte[] curve = { };
-
-        if (curveString is not null)
-            curve = StringToBytes(curveString);
-
-        return curve;
-    }
-
-    public static void SetFanConfig(AsusFan device, byte[] curve)
-    {
-        string bitCurve = BitConverter.ToString(curve);
-        Set(GgetParamName(device), bitCurve);
-    }
-
-    public static byte[] StringToBytes(string str)
-    {
-        String[] arr = str.Split('-');
-        byte[] array = new byte[arr.Length];
-        for (int i = 0; i < arr.Length; i++) array[i] = Convert.ToByte(arr[i], 16);
-        return array;
-    }
-
-    public static byte[] GetDefaultCurve(AsusFan device)
-    {
-        int mode = Modes.GetCurrentBase();
-
-        switch (mode)
-        {
-            case AsusACPI.PerformanceTurbo:
-                switch (device)
-                {
-                    case AsusFan.GPU:
-                        return StringToBytes("1E-3F-44-48-4C-50-54-62-16-1F-26-2D-39-47-55-5F");
-                    default:
-                        return StringToBytes("1E-3F-44-48-4C-50-54-62-11-1A-22-29-34-43-51-5A");
-                }
-            case AsusACPI.PerformanceSilent:
-                switch (device)
-                {
-                    case AsusFan.GPU:
-                        return StringToBytes("1E-31-3B-42-47-50-5A-64-00-00-04-11-1B-23-28-2D");
-                    default:
-                        return StringToBytes("1E-31-3B-42-47-50-5A-64-00-00-03-0C-14-1C-22-29");
-                }
-            default:
-                switch (device)
-                {
-                    case AsusFan.GPU:
-                        return StringToBytes("3A-3D-40-44-48-4D-51-62-0C-16-1D-1F-26-2D-34-4A");
-                    default:
-                        return StringToBytes("3A-3D-40-44-48-4D-51-62-08-11-16-1A-22-29-30-45");
-                }
-        }
-    }
-
-    public static string GetModeString(string name)
-    {
-        return GetString(name + "_" + Modes.GetCurrent());
-    }
-
-    public static int GetMode(string name, int empty = -1)
-    {
-        return Get(name + "_" + Modes.GetCurrent(), empty);
-    }
-
-    public static bool IsMode(string name)
-    {
-        return Get(name + "_" + Modes.GetCurrent()) == 1;
-    }
-
-    public static void SetMode(string name, int value)
-    {
-        Set(name + "_" + Modes.GetCurrent(), value);
-    }
-
-    public static void SetMode(string name, string value)
-    {
-        Set(name + "_" + Modes.GetCurrent(), value);
     }
 
     public static bool IsAlly()
@@ -632,16 +519,6 @@ public static class AppConfig
     public static bool IsAlwaysUltimate()
     {
         return ContainsModel("FA507NUR") || ContainsModel("FA506NCR") || ContainsModel("FA507NVR");
-    }
-
-    public static bool IsApplyPower() => IsMode("auto_apply_power");
-    public static bool IsApplyFans() => IsMode("auto_apply");
-    public static bool IsApplyUV() => IsMode("auto_uv");
-
-    public static bool IsManualModeRequired()
-    {
-        if (!IsApplyPower()) return false;
-        return Is("manual_mode") || ContainsModel("G733");
     }
 
     public static bool IsResetRequired()

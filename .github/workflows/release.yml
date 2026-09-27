@@ -1,6 +1,8 @@
 name: Release
 
 on:
+  push:
+    tags: [ 'v*' ]
   release:
     types: [ published ]
   workflow_dispatch:
@@ -10,11 +12,15 @@ permissions:
   id-token: write
   attestations: write
 
+env:
+  SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+
 jobs:
   release:
     runs-on: windows-2022
     steps:
     - uses: actions/checkout@v7
+
     - name: Setup dotnet
       uses: actions/setup-dotnet@v5
       with:
@@ -23,21 +29,25 @@ jobs:
     - name: Check tag matches version
       if: github.event_name == 'release'
       run: |
-        $version = ([xml](Get-Content app/GHelper.csproj)).Project.PropertyGroup.AssemblyVersion
+        $version = ([xml](Get-Content app/GHelper4Peripherals.csproj)).Project.PropertyGroup.AssemblyVersion
         $tag = "${{ github.event.release.tag_name }}"
         if ($tag -ne "v$version") { throw "Tag $tag does not match AssemblyVersion $version" }
 
     - name: Publish
       run: |
-        dotnet publish app/GHelper.sln --configuration Release --runtime win-x64 -p:PublishSingleFile=true --no-self-contained
+        dotnet publish app/GHelper4Peripherals.sln --configuration Release --runtime win-x64 -p:PublishSingleFile=true --no-self-contained
 
     - name: Upload unsigned EXE
+      if: env.SIGNPATH_API_TOKEN != ''
       id: upload-unsigned
       uses: actions/upload-artifact@v7
       with:
-        path: app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper.exe
+        name: GHelper4Peripherals-unsigned
+        path: app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe
 
-    - id: sign-exe
+    - name: Sign EXE (SignPath)
+      if: env.SIGNPATH_API_TOKEN != ''
+      id: sign-exe
       uses: signpath/github-action-submit-signing-request@v2
       with:
         api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -48,24 +58,40 @@ jobs:
         wait-for-completion: true
         output-artifact-directory: './signed'
 
-    - name: Create ZIP from signed EXE
-      run: powershell Compress-Archive ./signed/GHelper.exe ./signed/GHelper.zip
+    - name: Use signed EXE
+      if: env.SIGNPATH_API_TOKEN != ''
+      run: |
+        Copy-Item ./signed/GHelper4Peripherals.exe app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe -Force
 
-    - name: Upload signed EXE as workflow artifact
+    - name: Create ZIP
+      run: |
+        powershell Compress-Archive app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip -Force
+
+    - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
-        name: GHelper-signed
-        path: ./signed/GHelper.exe
+        name: GHelper4Peripherals
+        path: |
+          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe
+          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip
 
-    - name: Upload signed EXE and ZIP
+    - name: Create release (tag push)
+      if: github.event_name == 'push'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh release create "${{ github.ref_name }}" app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip --generate-notes
+
+    - name: Upload to existing release
       if: github.event_name == 'release'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        gh release upload "${{ github.event.release.tag_name }}" ./signed/GHelper.exe ./signed/GHelper.zip --clobber
+        gh release upload "${{ github.event.release.tag_name }}" app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip --clobber
+
     - name: Generate SLSA build provenance attestation
       uses: actions/attest-build-provenance@v4
       with:
         subject-path: |
-          ./signed/GHelper.exe
-          ./signed/GHelper.zip
+          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe
+          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip
