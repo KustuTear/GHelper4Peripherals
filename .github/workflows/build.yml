@@ -29,14 +29,8 @@ jobs:
       run: |
         dotnet publish app/GHelper4Peripherals.sln --configuration Release --runtime win-x64 -p:PublishSingleFile=true --no-self-contained
 
-    - name: Create ZIP
-      run: |
-        powershell Compress-Archive app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip
-
-    - name: Upload artifacts
+    - name: Upload artifact
       uses: actions/upload-artifact@v7
       with:
         name: GHelper4Peripherals
-        path: |
-          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe
-          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip
+        path: app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe

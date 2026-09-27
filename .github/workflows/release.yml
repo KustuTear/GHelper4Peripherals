@@ -63,35 +63,27 @@ jobs:
       run: |
         Copy-Item ./signed/GHelper4Peripherals.exe app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe -Force
 
-    - name: Create ZIP
-      run: |
-        powershell Compress-Archive app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip -Force
-
-    - name: Upload artifacts
+    - name: Upload artifact
       uses: actions/upload-artifact@v7
       with:
         name: GHelper4Peripherals
-        path: |
-          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe
-          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip
+        path: app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe
 
     - name: Create release (tag push)
       if: github.event_name == 'push'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        gh release create "${{ github.ref_name }}" app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip --generate-notes
+        gh release create "${{ github.ref_name }}" app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe --generate-notes
 
     - name: Upload to existing release
       if: github.event_name == 'release'
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        gh release upload "${{ github.event.release.tag_name }}" app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip --clobber
+        gh release upload "${{ github.event.release.tag_name }}" app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe --clobber
 
     - name: Generate SLSA build provenance attestation
       uses: actions/attest-build-provenance@v4
       with:
-        subject-path: |
-          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe
-          app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.zip
+        subject-path: app/bin/x64/Release/net10.0-windows/win-x64/publish/GHelper4Peripherals.exe

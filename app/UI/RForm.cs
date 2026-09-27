@@ -134,5 +134,24 @@ namespace GHelper.UI
 
         }
 
+        /// <summary>
+        /// Centers the form inside the current screen's working area and makes
+        /// sure the title bar stays on screen.
+        /// </summary>
+        public void CenterOnWorkingArea()
+        {
+            var screen = Screen.FromControl(this);
+            if (screen is null) return;
+
+            if (Height > screen.WorkingArea.Height)
+                Height = screen.WorkingArea.Height;
+
+            if (Width > screen.WorkingArea.Width)
+                Width = screen.WorkingArea.Width;
+
+            Left = screen.WorkingArea.Left + (screen.WorkingArea.Width - Width) / 2;
+            Top = screen.WorkingArea.Top + (screen.WorkingArea.Height - Height) / 2;
+        }
+
     }
 }

@@ -170,26 +170,7 @@ namespace GHelper
 
         private void AsusHeadsetSettings_Shown(object? sender, EventArgs e)
         {
-            if (Height > Program.settingsForm.Height)
-            {
-                var top = Program.settingsForm.Top + Program.settingsForm.Height - Height;
-
-                if (top < 0)
-                {
-                    MaximumSize = new Size(Width, Program.settingsForm.Height);
-                    Top = Program.settingsForm.Top;
-                }
-                else
-                {
-                    Top = top;
-                }
-            }
-            else
-            {
-                Top = Program.settingsForm.Top;
-            }
-
-            Left = Program.settingsForm.Left - Width - 5;
+            CenterOnWorkingArea();
 
             headset.Disconnect += Headset_Disconnect;
             headset.BatteryUpdated += Headset_BatteryUpdated;
